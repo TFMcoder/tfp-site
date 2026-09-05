@@ -448,5 +448,32 @@ DOMAINS.forEach(function(d){
   targets.forEach(function(el){ io.observe(el); });
 })();
 </script>
+
+<script>
+// Preserve campaign labels through the booking journey; this does not count bookings.
+(function () {
+  var keys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
+  var incoming = new URLSearchParams(window.location.search);
+  var campaign = new URLSearchParams();
+  keys.forEach(function (key) {
+    var value = incoming.get(key);
+    if (value && value.length <= 255) campaign.set(key, value);
+  });
+  if (!campaign.size) return;
+  var pages = ['/', '/index.html', '/case-hungarian-experiment.html', '/veterinary.html'];
+  document.querySelectorAll('a[href]').forEach(function (link) {
+    var href = link.getAttribute('href');
+    if (!href || href.charAt(0) === '#') return;
+    var url;
+    try { url = new URL(href, window.location.href); } catch (error) { return; }
+    var booking = url.protocol === 'https:' && url.hostname === 'calendly.com' &&
+      url.pathname === '/ben-truefocusmind/30-minute-consult';
+    var internal = url.origin === window.location.origin && pages.indexOf(url.pathname) !== -1;
+    if (!booking && !internal) return;
+    campaign.forEach(function (value, key) { url.searchParams.set(key, value); });
+    link.setAttribute('href', url.href);
+  });
+})();
+</script>
 </body>
 </html>
